@@ -1,0 +1,27 @@
+#!/bin/env bash
+
+# Semi-automatic massive deployment of nodes over serial
+#
+# Author: Anton Slavin
+# Create date: 2024-04-18
+
+[ "$IOTEMPOWER_ACTIVE" = "yes" ] || { echo "IoTempower not active, aborting." 1>&2;exit 1; }
+
+# Go to defined folder with N nodes as sub-folders, 
+# confirm that we have N devices ready to plug in.
+
+# Operate in two modes, either flashing one by one, or in batches of multiple nodes.
+
+# For one by one, repeatedly do:
+#    go to each node sub-folder 
+#    configure each node for deployment
+#    wait for USB device to be plugged in
+#    once plugged in, complete the flashing process
+#    clean up and exit node folder
+
+# For batch mode, set the number of parallel jobs/USB ports,
+# check if all USB ports are ready to be used,
+# wait for connections and begin flashing once USBs plugged in,
+# for each one: flash without mixing up any nodes
+
+# Done
