@@ -16,6 +16,7 @@ symlink_check=$(readlink -f "$default_firmware_path")
 
 if [[ $symlink_check == *"minimal"* ]]; then
   # Minimal firmware is already activated, exit
+  # TODO: suggest to undo the changes and bring back standard firmware
   echo "The minimal firmware version is already activated! Abandoning operation"
   exit
 fi
@@ -42,6 +43,10 @@ fi
 
 # Everything OK and we can activate the minimal firmware by setting up a syslink to it
 echo "Replacing default firmware file with the minimal version. NB! sudo access is required for the following operation!"
+
+# First remove the update-alternatives links for cyfmac, we're taking over
+sudo update-alternatives --quiet --remove cyfmac43455-sdio.bin /lib/firmware/cypress/cyfmac43455-sdio-standard.bin
+sudo update-alternatives --quiet --remove cyfmac43455-sdio.bin /lib/firmware/cypress/cyfmac43455-sdio-minimal.bin
 
 sudo ln -sf "$minimal_firmware_path" "$default_firmware_path"
 
