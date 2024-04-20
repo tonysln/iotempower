@@ -46,7 +46,7 @@ echo "Replacing default firmware file with the minimal version. NB! sudo access 
 
 # First remove the update-alternatives links for cyfmac, we're taking over
 #sudo update-alternatives --quiet --remove cyfmac43455-sdio.bin /lib/firmware/cypress/cyfmac43455-sdio-minimal.bin
-sudo alternatives --quiet --remove-all cyfmac43455-sdio.bin
+sudo update-alternatives --quiet --remove-all cyfmac43455-sdio.bin
 
 sudo ln -sf "$minimal_firmware_path" "$default_firmware_path"
 
