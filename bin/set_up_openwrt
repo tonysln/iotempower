@@ -1,0 +1,75 @@
+#!/bin/bash
+if [[ $# -gt 4 || "$*" = "help" || "$*" = "-h" || "$*" = "--help" ]]; then
+cat << EOF
+
+this must be called from a node directory (or one of its parent system directories), 
+after setting up the wifi credentials and settings.
+
+An SSH connection will be made into the connected OpenWRT router, and all settings
+applied using the UCI system.
+
+EOF
+exit 1
+fi
+
+[ "$IOTEMPOWER_ACTIVE" = "yes" ] || { echo "IoTempower not active, aborting." 1>&2;exit 1; }
+
+
+# 1. Find the newly connected router! Probably the hardest step. Need a smart initial guess.
+# Probably ask the user to give us some info too?
+read -p "Enter the router's IP address or hostname: " ROUTER_IP
+
+# 2. Establish a connection (and verify that it was successfull, otherwise warn right away).
+echo "Attempting to connect to $ROUTER_IP..."
+if ping -c 1 $ROUTER_IP &> /dev/null; then
+    echo "Connection established with $ROUTER_IP."
+else
+    echo "Failed to connect to $ROUTER_IP."
+    exit 1
+fi
+
+ssh root@$ROUTER_IP << 'EOF'
+    # 3. Check OpenWRT version information
+    echo "Checking OpenWRT version..."
+    OPENWRT_VERSION=$(cat /etc/openwrt_release | grep DISTRIB_RELEASE | cut -d '=' -f2)
+    echo "OpenWRT version: $OPENWRT_VERSION"
+
+    # Verify capability to install packages
+    opkg update && opkg install coreutils-cut
+
+    # 4. Install and configure Mosquitto without SSL
+    echo "Installing Mosquitto (no SSL)..."
+    opkg install mosquitto-nossl
+
+    echo "Configuring Mosquitto..."
+    uci set mosquitto.@mosquitto[0].anonymous=1
+    uci set mosquitto.@mosquitto[0].port=1883
+    uci commit mosquitto
+    /etc/init.d/mosquitto restart
+
+    # 5. Copy over wifi settings
+    echo "Configuring Wi-Fi settings..."
+    # Assuming the settings file is named wifi_settings.conf and includes BSSID and PASSWORD lines
+    BSSID=$(awk -F "=" '/BSSID/ {print $2}' /tmp/wifi_settings.conf)
+    PASSWORD=$(awk -F "=" '/PASSWORD/ {print $2}' /tmp/wifi_settings.conf)
+
+    uci set wireless.default_radio0.ssid="$BSSID"
+    uci set wireless.default_radio0.key="$PASSWORD"
+    uci set wireless.default_radio0.encryption="psk2"
+    uci commit wireless
+    wifi reload
+
+    echo "Configuration applied. Rebooting the device..."
+    reboot
+EOF
+
+echo "Waiting for the device to reboot..."
+sleep 60
+
+# 6. Now verify that the device is reachable and has our settings.
+echo "Verifying the new configuration..."
+if ping -c 1 $ROUTER_IP &> /dev/null; then
+    echo "Your device is up and reachable with new configuration."
+else
+    echo "Configuration verification failed."
+fi
