@@ -42,8 +42,11 @@ ssh root@$ROUTER_IP << 'EOF'
     opkg install mosquitto-nossl
 
     echo "Configuring Mosquitto..."
-    uci set mosquitto.@mosquitto[0].anonymous=1
-    uci set mosquitto.@mosquitto[0].port=1883
+    sudo tee -a /etc/mosquitto/mosquitto.conf > /dev/null <<EOT
+    allow_anonymous true
+    listener 1883
+    protocol mqtt
+    EOT
     uci commit mosquitto
     /etc/init.d/mosquitto restart
 
@@ -53,9 +56,12 @@ ssh root@$ROUTER_IP << 'EOF'
     BSSID=$(awk -F "=" '/BSSID/ {print $2}' /tmp/wifi_settings.conf)
     PASSWORD=$(awk -F "=" '/PASSWORD/ {print $2}' /tmp/wifi_settings.conf)
 
+    # TODO most likely need to switch to AP mode too
+
     uci set wireless.default_radio0.ssid="$BSSID"
     uci set wireless.default_radio0.key="$PASSWORD"
     uci set wireless.default_radio0.encryption="psk2"
+    uci set wireless.default_radio0.ieee80211w='0'
     uci commit wireless
     wifi reload
 
