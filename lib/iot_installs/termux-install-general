@@ -16,7 +16,15 @@ if ! termux-query curl > /dev/null; then
     echo "curl has been installed successfully"
 fi
 
-PACKAGE_LIST="which glibc-repo glibc-runner build-essential git mosquitto python python-ensurepip-wheels python-pip python-cryptography make rsync jq nodejs"
+PACKAGE_LIST="glibc-repo"
+to_install=$(filter_packages debian-query $PACKAGE_LIST)
+
+echo "Installing: $to_install..."
+termux-install $to_install
+echo "Installation of $to_install complete."
+
+# TODO: need to uninstall python-pip-glibc?
+PACKAGE_LIST="ncurses-utils which glibc-runner git-glibc build-essential binutils binutils-glibc sed-glibc gcc-glibc git git-glibc mosquitto python python-ensurepip-wheels python-pip python-cryptography python-glibc make mkae-glibc rsync jq nodejs"
 to_install=$(filter_packages debian-query $PACKAGE_LIST)
 
 echo "Installing: $to_install..."
